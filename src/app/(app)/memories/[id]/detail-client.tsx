@@ -32,14 +32,14 @@ export function MemoryDetailClient({ id }: { id: string }) {
     setError(null);
     try {
       const res = await fetch(`/api/memories/${id}`);
-      if (!res.ok) throw new Error('Failed to load memory');
+      if (!res.ok) throw new Error('加载记忆失败');
       const data = await res.json();
       setMemory(data.memory);
       setContent(data.memory.content);
       setType(data.memory.type);
       setImportance(data.memory.importance);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load memory');
+      setError(err instanceof Error ? err.message : '加载记忆失败');
     } finally {
       setLoading(false);
     }
@@ -59,7 +59,7 @@ export function MemoryDetailClient({ id }: { id: string }) {
     });
     const data = await res.json();
     if (!res.ok) {
-      setError(data.message ?? 'Failed to update');
+      setError(data.message ?? '更新失败');
       return;
     }
     setEditing(false);
@@ -74,33 +74,33 @@ export function MemoryDetailClient({ id }: { id: string }) {
     });
     if (!res.ok) {
       const data = await res.json();
-      setError(data.message ?? 'Failed to delete');
+      setError(data.message ?? '删除失败');
       return;
     }
     router.push('/memories');
     router.refresh();
   }
 
-  if (loading) return <p className="text-sm text-[#6b7280]">Loading…</p>;
+  if (loading) return <p className="text-sm text-[#6b7280]">加载中…</p>;
   if (error) return <div className="text-sm text-red-300">{error}</div>;
   if (!memory) return null;
 
   return (
     <div className="mx-auto max-w-3xl">
       <Link href="/memories" className="text-sm text-[#60a5fa] hover:underline">
-        ← Back to memories
+        ← 返回记忆列表
       </Link>
 
       <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
         <span className="rounded bg-[#1f2937] px-2 py-0.5 text-[#60a5fa]">{typeLabel(memory.type)}</span>
         <span className="rounded bg-[#1f2937] px-2 py-0.5 text-[#e5e9f0]">
-          {memory.status === 'active' ? 'Active' : 'Superseded'}
+          {memory.status === 'active' ? '生效中' : '已被替代'}
         </span>
         <span className="text-[#6b7280]">
-          importance {memory.importance} · confidence {memory.confidence} · from {memory.source_provider}
+          重要度 {memory.importance} · 置信度 {memory.confidence} · 来自 {PROVIDER_LABELS[memory.source_provider] ?? memory.source_provider}
         </span>
         <span className="ml-auto text-[#6b7280]">
-          v{memory.version_number ?? 1} · created {formatDate(memory.created_at)}
+          v{memory.version_number ?? 1} · 创建于 {formatDate(memory.created_at)}
         </span>
       </div>
 
@@ -138,14 +138,14 @@ export function MemoryDetailClient({ id }: { id: string }) {
               className="w-24 rounded-lg border border-[#1f2937] bg-[#0f172a] px-3 py-1.5 text-sm outline-none"
             />
             <button type="submit" className="rounded-lg bg-[#2563eb] px-4 py-1.5 text-sm font-medium text-white">
-              Save
+              保存
             </button>
             <button
               type="button"
               onClick={() => setEditing(false)}
               className="rounded-lg border border-[#374151] px-4 py-1.5 text-sm text-[#9ca3af]"
             >
-              Cancel
+              取消
             </button>
           </div>
         </form>
@@ -157,7 +157,7 @@ export function MemoryDetailClient({ id }: { id: string }) {
             onClick={() => setEditing(true)}
             className="rounded-lg border border-[#374151] px-4 py-1.5 text-sm text-[#e5e9f0] hover:bg-[#1f2937]"
           >
-            Edit
+            编辑
           </button>
         )}
         {!confirmDelete ? (
@@ -165,16 +165,16 @@ export function MemoryDetailClient({ id }: { id: string }) {
             onClick={() => setConfirmDelete(true)}
             className="rounded-lg border border-red-500/40 px-4 py-1.5 text-sm text-red-300 hover:bg-red-500/10"
           >
-            Delete
+            删除
           </button>
         ) : (
           <div className="flex items-center gap-2 rounded-lg border border-red-500/40 px-3 py-1.5">
-            <span className="text-sm text-red-300">Permanently delete?</span>
+            <span className="text-sm text-red-300">确定要永久删除此记忆吗？</span>
             <button onClick={handleDelete} className="rounded bg-red-500/20 px-3 py-1 text-sm font-medium text-red-300">
-              Yes, delete
+              确认删除
             </button>
             <button onClick={() => setConfirmDelete(false)} className="text-sm text-[#9ca3af]">
-              Cancel
+              取消
             </button>
           </div>
         )}
@@ -182,17 +182,17 @@ export function MemoryDetailClient({ id }: { id: string }) {
 
       {memory.supersedes_memory_id && (
         <p className="mt-4 text-xs text-[#6b7280]">
-          Supersedes{' '}
+          替代了{' '}
           <Link href={`/memories/${memory.supersedes_memory_id}`} className="text-[#60a5fa] hover:underline">
-            memory {memory.supersedes_memory_id}
+            记忆 {memory.supersedes_memory_id}
           </Link>
         </p>
       )}
 
       <section className="mt-8">
-        <h2 className="font-semibold">Version history</h2>
+        <h2 className="font-semibold">版本历史</h2>
         {memory.versions.length === 0 ? (
-          <p className="mt-2 text-sm text-[#6b7280]">Only one version exists.</p>
+          <p className="mt-2 text-sm text-[#6b7280]">当前仅有一个版本。</p>
         ) : (
           <ul className="mt-3 flex flex-col gap-2">
             {[...memory.versions].reverse().map((v) => (
@@ -211,9 +211,9 @@ export function MemoryDetailClient({ id }: { id: string }) {
       </section>
 
       <section className="mt-8">
-        <h2 className="font-semibold">Audit trail</h2>
+        <h2 className="font-semibold">审计追踪</h2>
         {memory.audit.length === 0 ? (
-          <p className="mt-2 text-sm text-[#6b7280]">No audit entries.</p>
+          <p className="mt-2 text-sm text-[#6b7280]">暂无审计日志。</p>
         ) : (
           <ul className="mt-3 flex flex-col gap-1.5">
             {memory.audit.map((a, i) => (

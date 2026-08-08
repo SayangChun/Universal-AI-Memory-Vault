@@ -14,17 +14,17 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: 'Universal AI Memory Vault',
-    template: '%s · Universal AI Memory Vault',
+    default: '通用 AI 记忆库',
+    template: '%s · 通用 AI 记忆库',
   },
   description:
-    'A provider-agnostic personal long-term memory layer for Claude, ChatGPT and other AI platforms. You own the data; the AI brings the intelligence.',
+    '跨 AI 平台的个人长期记忆层，适用于 Claude、ChatGPT 及其他 AI 平台。你拥有数据所有权，AI 赋予智能。',
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
-      lang="en"
+      lang="zh-CN"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">{children}</body>

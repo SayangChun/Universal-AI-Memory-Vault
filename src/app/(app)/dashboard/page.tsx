@@ -21,8 +21,8 @@ export default async function DashboardPage() {
 
   return (
     <div className="mx-auto max-w-5xl">
-      <h1 className="text-2xl font-semibold">Dashboard</h1>
-      <p className="mt-1 text-sm text-[#9ca3af]">Your personal memory vault at a glance.</p>
+      <h1 className="text-2xl font-semibold">仪表盘</h1>
+      <p className="mt-1 text-sm text-[#9ca3af]">你的个人 AI 记忆库概览。</p>
 
       {isDemo && (
         <div className="mt-4 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-300">
@@ -36,24 +36,24 @@ export default async function DashboardPage() {
 
       <div className="mt-6 grid gap-4 sm:grid-cols-3">
         <div className="rounded-2xl border border-[#1f2937] bg-[#111827] p-5">
-          <div className="text-xs uppercase tracking-wide text-[#6b7280]">Total memories</div>
+          <div className="text-xs uppercase tracking-wide text-[#6b7280]">记忆总数</div>
           <div className="mt-1 text-3xl font-semibold">{total}</div>
         </div>
         <div className="rounded-2xl border border-[#1f2937] bg-[#111827] p-5">
-          <div className="text-xs uppercase tracking-wide text-[#6b7280]">Memory types</div>
+          <div className="text-xs uppercase tracking-wide text-[#6b7280]">记忆类型数</div>
           <div className="mt-1 text-3xl font-semibold">{typeEntries.length}</div>
         </div>
         <Link href="/memories" className="rounded-2xl border border-[#2563eb]/40 bg-[#111827] p-5 transition hover:bg-[#16213a]">
-          <div className="text-xs uppercase tracking-wide text-[#60a5fa]">Browse memories</div>
+          <div className="text-xs uppercase tracking-wide text-[#60a5fa]">浏览所有记忆</div>
           <div className="mt-1 text-3xl font-semibold">→</div>
         </Link>
       </div>
 
       <div className="mt-8 grid gap-6 lg:grid-cols-2">
         <section className="rounded-2xl border border-[#1f2937] bg-[#111827] p-5">
-          <h2 className="font-semibold">By type</h2>
+          <h2 className="font-semibold">类型分布</h2>
           {typeEntries.length === 0 ? (
-            <p className="mt-3 text-sm text-[#6b7280]">No memories yet. Ask an AI connected via MCP to remember something.</p>
+            <p className="mt-3 text-sm text-[#6b7280]">暂无记忆。可以通过 MCP 连接的 AI 助手记住新内容。</p>
           ) : (
             <div className="mt-4 flex flex-col gap-2">
               {typeEntries.map(([type, count]) => {
@@ -75,7 +75,7 @@ export default async function DashboardPage() {
         </section>
 
         <section className="rounded-2xl border border-[#1f2937] bg-[#111827] p-5">
-          <h2 className="font-semibold">Recent memories</h2>
+          <h2 className="font-semibold">最近记忆</h2>
           {stats.recent_memories?.length ? (
             <ul className="mt-3 flex flex-col gap-2">
               {stats.recent_memories.map((m) => (
@@ -83,20 +83,20 @@ export default async function DashboardPage() {
                   <Link href={`/memories/${m.id}`} className="flex flex-col gap-0.5 rounded-lg px-2 py-1.5 transition hover:bg-[#1f2937]">
                     <span className="text-sm text-[#e5e9f0]">{truncate(m.content, 90)}</span>
                     <span className="text-xs text-[#6b7280]">
-                      {MEMORY_TYPE_LABELS[m.type] ?? m.type} · importance {m.importance} · {formatDate(m.updated_at)}
+                      {MEMORY_TYPE_LABELS[m.type] ?? m.type} · 重要度 {m.importance} · {formatDate(m.updated_at)}
                     </span>
                   </Link>
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="mt-3 text-sm text-[#6b7280]">Nothing here yet.</p>
+            <p className="mt-3 text-sm text-[#6b7280]">暂无记忆。</p>
           )}
         </section>
       </div>
 
       <section className="mt-6 rounded-2xl border border-[#1f2937] bg-[#111827] p-5">
-        <h2 className="font-semibold">Recent activity</h2>
+        <h2 className="font-semibold">最近活动</h2>
         {stats.recent_updates?.length ? (
           <ul className="mt-3 flex flex-col gap-2">
             {stats.recent_updates.map((a, i) => (
@@ -110,7 +110,7 @@ export default async function DashboardPage() {
             ))}
           </ul>
         ) : (
-          <p className="mt-3 text-sm text-[#6b7280]">No activity yet.</p>
+          <p className="mt-3 text-sm text-[#6b7280]">暂无活动记录。</p>
         )}
       </section>
     </div>

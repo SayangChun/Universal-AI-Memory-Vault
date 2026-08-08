@@ -2,7 +2,7 @@
 import { Suspense, useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { MEMORY_TYPES, MEMORY_TYPE_LABELS, MEMORY_TYPE_EN, type MemoryType } from '@/lib/types';
+import { MEMORY_TYPES, MEMORY_TYPE_LABELS, MEMORY_TYPE_EN, PROVIDER_LABELS, type MemoryType } from '@/lib/types';
 import { formatDate, truncate } from '@/lib/utils';
 
 interface MemoryRow {
@@ -40,17 +40,17 @@ function MemoriesContent() {
       if (qParam) {
         params.set('query', qParam);
         const res = await fetch(`/api/memories/search?${params}`);
-        if (!res.ok) throw new Error('Search failed');
+        if (!res.ok) throw new Error('搜索失败');
         const data = await res.json();
         setMemories(data.results ?? []);
       } else {
         const res = await fetch(`/api/memories?${params}`);
-        if (!res.ok) throw new Error('Failed to load memories');
+        if (!res.ok) throw new Error('加载记忆失败');
         const data = await res.json();
         setMemories(data.memories ?? []);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load memories');
+      setError(err instanceof Error ? err.message : '加载记忆失败');
     } finally {
       setLoading(false);
     }
@@ -72,14 +72,14 @@ function MemoriesContent() {
     <div className="mx-auto max-w-5xl">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">Memories</h1>
-          <p className="mt-1 text-sm text-[#9ca3af]">Everything your AI knows about you.</p>
+          <h1 className="text-2xl font-semibold">记忆列表</h1>
+          <p className="mt-1 text-sm text-[#9ca3af]">AI 了解关于你的一切信息。</p>
         </div>
         <Link
           href="/memories/new"
           className="rounded-lg bg-[#2563eb] px-4 py-2 text-center text-sm font-medium text-white hover:bg-[#1d4ed8]"
         >
-          + New memory
+          + 新增记忆
         </Link>
       </div>
 
@@ -90,7 +90,7 @@ function MemoriesContent() {
           onKeyDown={(e) => {
             if (e.key === 'Enter') setParam('q', query.trim());
           }}
-          placeholder="Search memories… (Enter to search)"
+          placeholder="搜索记忆… (按回车搜索)"
           className="w-full rounded-lg border border-[#1f2937] bg-[#0f172a] px-3 py-2 text-sm outline-none focus:border-[#2563eb] sm:w-80"
         />
         <select
@@ -98,7 +98,7 @@ function MemoriesContent() {
           onChange={(e) => setParam('type', e.target.value)}
           className="rounded-lg border border-[#1f2937] bg-[#0f172a] px-3 py-2 text-sm text-[#e5e9f0] outline-none focus:border-[#2563eb]"
         >
-          <option value="">All types</option>
+          <option value="">所有类型</option>
           {MEMORY_TYPES.map((t) => (
             <option key={t} value={t}>
               {typeLabel(t)}
@@ -110,7 +110,7 @@ function MemoriesContent() {
             onClick={() => router.push('/memories')}
             className="rounded-lg border border-[#374151] px-3 py-2 text-sm text-[#9ca3af] hover:bg-[#1f2937]"
           >
-            Clear
+            清除筛选
           </button>
         )}
       </div>
@@ -120,12 +120,12 @@ function MemoriesContent() {
       )}
 
       {loading ? (
-        <p className="mt-8 text-center text-sm text-[#6b7280]">Loading…</p>
+        <p className="mt-8 text-center text-sm text-[#6b7280]">加载中…</p>
       ) : memories.length === 0 ? (
         <div className="mt-12 rounded-2xl border border-dashed border-[#1f2937] p-10 text-center">
-          <p className="text-[#9ca3af]">No memories found.</p>
+          <p className="text-[#9ca3af]">未找到相关记忆。</p>
           <p className="mt-1 text-sm text-[#6b7280]">
-            Connect an AI via MCP and ask it to remember something, or add one manually.
+            连接 MCP AI 助手让其记住内容，或手动添加一条记忆。
           </p>
         </div>
       ) : (
@@ -139,7 +139,7 @@ function MemoriesContent() {
                 <div className="flex items-center gap-2 text-xs">
                   <span className="rounded bg-[#1f2937] px-2 py-0.5 text-[#60a5fa]">{typeLabel(m.type)}</span>
                   <span className="text-[#6b7280]">
-                    importance {m.importance} · {m.source_provider}
+                    重要度 {m.importance} · 来自 {PROVIDER_LABELS[m.source_provider as keyof typeof PROVIDER_LABELS] ?? m.source_provider}
                   </span>
                   <span className="ml-auto text-[#6b7280]">{formatDate(m.updated_at)}</span>
                 </div>
