@@ -1,7 +1,7 @@
 // Production repository backed by Supabase Postgres RPC functions.
 // All access goes through the service role client and the SECURITY DEFINER
-// functions in supabase/migrations/0001_init.sql. RLS stays enabled as
-// defense in depth (every function also filters by user_id).
+// functions in supabase/migrations/0001_init.sql. Every function filters by
+// the single owner's user_id.
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type {
   DashboardStats,

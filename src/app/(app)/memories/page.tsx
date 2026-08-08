@@ -1,5 +1,5 @@
 'use client';
-import { useCallback, useEffect, useState } from 'react';
+import { Suspense, useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { MEMORY_TYPES, MEMORY_TYPE_LABELS, MEMORY_TYPE_EN, type MemoryType } from '@/lib/types';
@@ -19,7 +19,7 @@ function typeLabel(t: MemoryType): string {
   return MEMORY_TYPE_LABELS[t] ?? MEMORY_TYPE_EN[t] ?? t;
 }
 
-export default function MemoriesPage() {
+function MemoriesContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const typeParam = (searchParams.get('type') ?? '') as MemoryType | '';
@@ -150,5 +150,13 @@ export default function MemoriesPage() {
         </ul>
       )}
     </div>
+  );
+}
+
+export default function MemoriesPage() {
+  return (
+    <Suspense fallback={null}>
+      <MemoriesContent />
+    </Suspense>
   );
 }

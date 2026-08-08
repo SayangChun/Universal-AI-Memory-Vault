@@ -1,4 +1,3 @@
-import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { getSessionUser } from '@/lib/auth';
 import { getAdminClient } from '@/lib/supabase/admin';
@@ -11,7 +10,6 @@ export const dynamic = 'force-dynamic';
 
 export default async function DashboardPage() {
   const user = await getSessionUser();
-  if (!user) redirect('/login');
 
   const service = new MemoryService(new SupabaseMemoryRepo(getAdminClient()));
   const stats = await service.stats(user.id);

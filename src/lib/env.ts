@@ -2,11 +2,16 @@
 // NEXT_PUBLIC_* values are inlined at build time and safe for the client;
 // every other value here is server-only and must never reach the browser.
 
+// Default single-user identity (the app has no account system).
+export const DEFAULT_SINGLE_USER_ID = '00000000-0000-0000-0000-000000000001';
+export const DEFAULT_SINGLE_USER_EMAIL = 'owner@localhost';
+
 export function getServerEnv() {
   return {
     supabaseUrl: required('NEXT_PUBLIC_SUPABASE_URL'),
-    supabaseAnonKey: required('NEXT_PUBLIC_SUPABASE_ANON_KEY'),
     supabaseServiceRoleKey: required('SUPABASE_SERVICE_ROLE_KEY'),
+    singleUserId: process.env.SINGLE_USER_ID || DEFAULT_SINGLE_USER_ID,
+    singleUserEmail: process.env.SINGLE_USER_EMAIL || DEFAULT_SINGLE_USER_EMAIL,
     appUrl: process.env.NEXT_PUBLIC_APP_URL ?? process.env.APP_URL ?? 'http://localhost:3000',
     embeddingProvider: (process.env.EMBEDDING_PROVIDER ?? 'none') as 'none' | 'openai' | 'custom',
     openaiApiKey: process.env.OPENAI_API_KEY,

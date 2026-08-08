@@ -1,6 +1,6 @@
 // OAuth authorization endpoint (RFC 6749 §3.1).
-// Requires the user to be signed in to the web dashboard (Supabase Auth).
-// Renders a consent page; on approval redirects back with a PKCE auth code.
+// Single-user platform: no sign-in step, renders a consent page and
+// redirects back with a PKCE auth code on approval.
 import { getSessionUser } from '@/lib/auth';
 import { getAdminClient } from '@/lib/supabase/admin';
 import { AuthorizationServer, OAuthServerError } from '@/lib/oauth/authorization-server';
@@ -123,10 +123,6 @@ function redirectError(redirectUri: string, state: string, error: string, descri
 export async function GET(request: Request): Promise<Response> {
   const user = await getSessionUser();
   const url = new URL(request.url);
-  if (!user) {
-    const next = encodeURIComponent(url.pathname + url.search);
-    return Response.redirect(`${appUrl()}/login?next=${next}`, 302);
-  }
 
   let params: AuthorizeParams;
   try {
@@ -138,7 +134,7 @@ export async function GET(request: Request): Promise<Response> {
   try {
     const { clientId } = await validate(params);
     const client = await authServer.getClient(clientId);
-    return html(consentHtml(params, client?.client_name ?? 'this application', user.email ?? 'user'));
+    return html(consentHtml(params, client?.client_name ?? 'this application', user.email ?? 'owner'));
   } catch (err) {
     if (err instanceof OAuthServerError) {
       // If we know the redirect target, return the error there per RFC 6749.
@@ -150,11 +146,6 @@ export async function GET(request: Request): Promise<Response> {
 
 export async function POST(request: Request): Promise<Response> {
   const user = await getSessionUser();
-  const url = new URL(request.url);
-  if (!user) {
-    const next = encodeURIComponent(url.pathname + url.search);
-    return Response.redirect(`${appUrl()}/login?next=${next}`, 302);
-  }
 
   const form = await request.formData().catch(() => null);
   const get = (k: string): string => String(form?.get(k) ?? '');

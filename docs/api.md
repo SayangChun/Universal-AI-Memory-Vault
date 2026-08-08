@@ -1,8 +1,8 @@
 # REST API
 
-All endpoints return JSON. Authenticated endpoints require the user's Supabase
-session cookie (browser) — or, where noted, a personal access token as a
-`Bearer` token.
+The platform is single-user (no accounts, no login). Every endpoint acts on the
+one owner's vault. There is no session cookie; the MCP resource server and
+personal access tokens use a `Bearer` token.
 
 Base URL: `<APP_URL>`
 
@@ -26,7 +26,7 @@ Base URL: `<APP_URL>`
 
 ## Memories
 
-### `GET /api/memories` — list (authenticated)
+### `GET /api/memories` — list
 
 Query params:
 
@@ -39,7 +39,7 @@ Query params:
 
 Response: `{ "memories": [Memory…], "total": n }`
 
-### `POST /api/memories` — create (authenticated)
+### `POST /api/memories` — create
 
 ```json
 {
@@ -56,17 +56,17 @@ Response: `{ "memories": [Memory…], "total": n }`
 
 Response `201`: `{ "memory": MemoryDetail }`
 
-### `GET /api/memories/[id]` — detail (authenticated)
+### `GET /api/memories/[id]` — detail
 
 Response: `{ "memory": MemoryDetail }` where `MemoryDetail` includes `versions`
 (version history) and `audit` (audit trail). `404` if not found or not yours.
 
-### `PATCH /api/memories/[id]` — update (authenticated)
+### `PATCH /api/memories/[id]` — update
 
 Partial update. At least one of `content` / `type` / `confidence` / `importance`
 / `meta`. Changing `content` bumps the version number.
 
-### `DELETE /api/memories/[id]` — delete (authenticated)
+### `DELETE /api/memories/[id]` — delete
 
 Requires a confirmation body:
 
@@ -77,7 +77,7 @@ Requires a confirmation body:
 Hard-deletes the memory (versions and audit history are kept). `400` without
 `confirm`.
 
-### `GET /api/memories/search` — semantic + lexical search (authenticated)
+### `GET /api/memories/search` — semantic + lexical search
 
 | Param | Type | Default |
 | --- | --- | --- |
@@ -93,7 +93,7 @@ Only `active` memories are returned.
 
 ## Export / Import / Erase
 
-### `GET /api/export` — full backup (authenticated)
+### `GET /api/export` — full backup
 
 Downloads `universal-memory.json`:
 
@@ -107,12 +107,12 @@ Downloads `universal-memory.json`:
 }
 ```
 
-### `POST /api/import` — restore (authenticated)
+### `POST /api/import` — restore
 
 Body: `{ "items": [ExportItem…] }` (or a bare array). Re-imports into the
-authenticated user's vault. Response `{ "ok": true, "imported": n }`.
+vault. Response `{ "ok": true, "imported": n }`.
 
-### `POST /api/delete-all` — erase everything (authenticated)
+### `POST /api/delete-all` — erase everything
 
 ```json
 { "confirm": "DELETE_ALL" }
@@ -125,13 +125,13 @@ only.
 
 ## Stats & audit
 
-### `GET /api/stats` — dashboard stats (authenticated)
+### `GET /api/stats` — dashboard stats
 
 ```json
 { "stats": { "total": 3, "by_type": { "fact": 2 }, "recent_memories": […], "recent_updates": […] } }
 ```
 
-### `GET /api/audit-logs` — recent activity (authenticated)
+### `GET /api/audit-logs` — recent activity
 
 | Param | Type | Default |
 | --- | --- | --- |
@@ -144,21 +144,21 @@ Response: `{ "entries": [{ action, source_provider, memory_id, detail, created_a
 
 ## Integrations
 
-### `GET /api/integrations` / `POST /api/integrations` (authenticated)
+### `GET /api/integrations` / `POST /api/integrations`
 
 `POST` body: `{ "name": "Claude (claude.ai)", "provider": "claude", "meta": {} }`
 
-### `DELETE /api/integrations/[id]` (authenticated)
+### `DELETE /api/integrations/[id]`
 
 ---
 
 ## Access tokens
 
-### `GET /api/access-tokens` (authenticated)
+### `GET /api/access-tokens`
 
 Returns masked tokens (`token_prefix`, never the secret).
 
-### `POST /api/access-tokens` (authenticated)
+### `POST /api/access-tokens`
 
 ```json
 { "name": "my-script", "provider": "other", "integration_id": null }
@@ -167,7 +167,7 @@ Returns masked tokens (`token_prefix`, never the secret).
 Response `201`: `{ "token": {…}, "secret": "umv_…" }` — the full secret is
 returned **once**.
 
-### `DELETE /api/access-tokens/[id]` (authenticated)
+### `DELETE /api/access-tokens/[id]`
 
 Revokes the token.
 
@@ -193,13 +193,13 @@ Revokes the token.
 Errors use HTTP status codes with a JSON body:
 
 ```json
-{ "error": "unauthorized", "message": "Not authenticated" }
+{ "error": "unauthorized", "message": "Invalid access token" }
 ```
 
 | Status | Meaning |
 | --- | --- |
 | 400 | Validation / confirmation required |
-| 401 | Not authenticated (missing/invalid session or token) |
+| 401 | Invalid or missing access token |
 | 404 | Resource not found (or not owned by you) |
 | 429 | Rate limit exceeded |
 | 500 | Server error |
@@ -207,5 +207,5 @@ Errors use HTTP status codes with a JSON body:
 ## Rate limiting
 
 Per-user sliding window, default 120 requests/minute (configurable via
-`RATE_LIMIT_RPM`; disable with `ENABLE_RATE_LIMIT=false`). Applies to all
-authenticated REST endpoints.
+`RATE_LIMIT_RPM`; disable with `ENABLE_RATE_LIMIT=false`). Applies to all REST
+endpoints.

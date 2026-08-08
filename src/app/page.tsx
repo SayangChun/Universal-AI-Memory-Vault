@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import { getSessionUser } from '@/lib/auth';
 
 const PROVIDER_MATRIX = [
   { name: 'Claude (claude.ai)', status: 'Supported', note: 'Remote MCP connector via OAuth (Free/Pro/Max/Team/Enterprise)' },
@@ -8,7 +7,6 @@ const PROVIDER_MATRIX = [
 ] as const;
 
 export default async function Home() {
-  const user = await getSessionUser();
   return (
     <main className="flex min-h-screen flex-col bg-[#0a0f1c] text-[#e5e9f0]">
       <nav className="mx-auto flex w-full max-w-5xl items-center justify-between px-6 py-6">
@@ -17,31 +15,15 @@ export default async function Home() {
           <span>Universal Memory Vault</span>
         </div>
         <div className="flex items-center gap-3 text-sm">
-          {user ? (
-            <>
-              <Link href="/dashboard" className="rounded-lg px-3 py-1.5 text-[#9ca3af] hover:text-white">
-                Dashboard
-              </Link>
-              <Link
-                href="/dashboard"
-                className="rounded-lg bg-[#2563eb] px-4 py-1.5 font-medium text-white hover:bg-[#1d4ed8]"
-              >
-                Open vault
-              </Link>
-            </>
-          ) : (
-            <>
-              <Link href="/login" className="rounded-lg px-3 py-1.5 text-[#9ca3af] hover:text-white">
-                Sign in
-              </Link>
-              <Link
-                href="/signup"
-                className="rounded-lg bg-[#2563eb] px-4 py-1.5 font-medium text-white hover:bg-[#1d4ed8]"
-              >
-                Get started
-              </Link>
-            </>
-          )}
+          <Link href="/dashboard" className="rounded-lg px-3 py-1.5 text-[#9ca3af] hover:text-white">
+            Dashboard
+          </Link>
+          <Link
+            href="/dashboard"
+            className="rounded-lg bg-[#2563eb] px-4 py-1.5 font-medium text-white hover:bg-[#1d4ed8]"
+          >
+            Open vault
+          </Link>
         </div>
       </nav>
 
@@ -59,14 +41,12 @@ export default async function Home() {
           <b className="text-[#e5e9f0]"> you</b> own the data, control access, and audit every change.
         </p>
         <div className="mt-8 flex items-center gap-3">
-          {!user && (
-            <Link
-              href="/signup"
-              className="rounded-xl bg-[#2563eb] px-6 py-3 font-semibold text-white hover:bg-[#1d4ed8]"
-            >
-              Create your vault
-            </Link>
-          )}
+          <Link
+            href="/dashboard"
+            className="rounded-xl bg-[#2563eb] px-6 py-3 font-semibold text-white hover:bg-[#1d4ed8]"
+          >
+            Open your vault
+          </Link>
           <a
             href="#providers"
             className="rounded-xl border border-[#374151] px-6 py-3 font-medium text-[#e5e9f0] hover:bg-[#1f2937]"

@@ -1,7 +1,4 @@
 import Link from 'next/link';
-import { redirect } from 'next/navigation';
-import { getSessionUser } from '@/lib/auth';
-import { SignOutButton } from '@/components/sign-out-button';
 
 const NAV = [
   { href: '/dashboard', label: 'Dashboard' },
@@ -11,9 +8,6 @@ const NAV = [
 ];
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
-  const user = await getSessionUser();
-  if (!user) redirect('/login');
-
   return (
     <div className="flex min-h-screen bg-[#0a0f1c] text-[#e5e9f0]">
       <aside className="hidden w-56 shrink-0 flex-col border-r border-[#1f2937] bg-[#0d1424] p-4 sm:flex">
@@ -32,10 +26,6 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             </Link>
           ))}
         </nav>
-        <div className="mt-auto flex flex-col gap-3 border-t border-[#1f2937] pt-4">
-          <div className="truncate px-2 text-xs text-[#6b7280]">{user.email}</div>
-          <SignOutButton />
-        </div>
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">

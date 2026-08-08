@@ -15,7 +15,7 @@ This project is a **memory storage + retrieval layer only**. It deliberately doe
 │  Gemini CLI  │ ─────────────────────────────────▶ │   ├─ /api/mcp  (MCP server)  │
 └──────────────┘                                    │   ├─ /api/oauth/* (AS)        │
                                                     │   ├─ /api/memories/* (REST)   │
-┌──────────────┐    Browser (Supabase Auth)        │   └─ Web dashboard            │
+┌──────────────┐          Browser (single user)    │   └─ Web dashboard            │
 │  You (web)   │ ─────────────────────────────────▶ │                              │
 └──────────────┘                                    └───────────────┬──────────────┘
                                                                     ▼
@@ -25,15 +25,18 @@ This project is a **memory storage + retrieval layer only**. It deliberately doe
                                                     mcp_access_tokens · OAuth tables
 ```
 
+- **Single user, no account system.** The platform has no login or signup — it is
+  a private vault for one owner. All data is scoped to a fixed identity
+  (`SINGLE_USER_ID` / `SINGLE_USER_EMAIL`, see `.env.example`).
 - **Memory schema is vendor-neutral** — `fact`, `preference`, `habit`, `goal`, `life_event`, `relationship`, `worldview`, `project`, `temporary`, `other`. No `ChatGPTMemory`/`ClaudeMemory`/`GeminiMemory` variants.
 - **Every mutation is versioned and audited.** `memory_update` bumps the version and snapshots old content; all actions are written to `audit_logs`.
-- **RLS + SECURITY DEFINER.** All data access goes through Postgres RPC functions (`memory_create`, `memory_update`, …) with an explicit `user_id` filter, called with the service-role key. Row Level Security stays on as defense in depth. Cross-user reads are impossible.
+- **SECURITY DEFINER RPC.** All data access goes through Postgres RPC functions (`memory_create`, `memory_update`, …) with an explicit `user_id` filter, called with the service-role key. Cross-user reads are impossible.
 - **Memory is untrusted user data.** When memory is returned to an AI it is tagged `USER MEMORY — UNTRUSTED DATA` with an instruction to treat it as data. The server never executes memory content.
 - **Honest compatibility matrix.** Anything not supported by a provider is marked `NOT CURRENTLY SUPPORTED` — no fake providers.
 
 ## Tech stack
 
-Next.js 16 · React 19 · TypeScript · Tailwind CSS v4 · Supabase (Auth + Postgres + pgvector) · MCP SDK v2 (`@modelcontextprotocol/server` 2.0.0, 2026-07-28 spec) · Zod 4 · Vitest.
+Next.js 16 · React 19 · TypeScript · Tailwind CSS v4 · Supabase (Postgres + pgvector) · MCP SDK v2 (`@modelcontextprotocol/server` 2.0.0, 2026-07-28 spec) · Zod 4 · Vitest.
 
 ## Getting started
 
@@ -55,8 +58,8 @@ Required env vars (see `.env.example` for the full list):
 | Variable | Purpose |
 | --- | --- |
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon key (safe for the browser) |
 | `SUPABASE_SERVICE_ROLE_KEY` | **Server-only.** Never exposed to the browser |
+| `SINGLE_USER_ID` / `SINGLE_USER_EMAIL` | Fixed owner identity (defaults in `.env.example`) |
 | `NEXT_PUBLIC_APP_URL` | Public URL of this app (e.g. `https://you.example.com`) |
 | `MCP_OAUTH_SECRET` | HMAC secret for OAuth access tokens (≥32 random chars) |
 | `MCP_SERVER_URL` | Public MCP endpoint, usually `NEXT_PUBLIC_APP_URL` + `/api/mcp` |
@@ -68,22 +71,19 @@ Required env vars (see `.env.example` for the full list):
 supabase link --project-ref <your-project-ref>
 supabase db push
 
-# or apply supabase/migrations/0001_init.sql and 0002_oauth.sql manually
-# in the Supabase SQL editor (enable the pgvector extension first).
+# or apply supabase/migrations/0001_init.sql, 0002_oauth.sql and
+# 0003_remove_auth.sql manually in the Supabase SQL editor
+# (enable the pgvector extension first).
 ```
 
-### 4. Configure Supabase Auth
-
-In the Supabase dashboard set the site URL to `NEXT_PUBLIC_APP_URL` and add
-`NEXT_PUBLIC_APP_URL/auth/callback` to the redirect allow-list.
-
-### 5. Run
+### 4. Run
 
 ```bash
 npm run dev        # http://localhost:3000
 ```
 
-Then sign up, and connect an AI (see below).
+The app is a private single-user vault — no signup or login is needed. Open the
+dashboard and connect an AI (see below).
 
 ## Connecting AI platforms
 
@@ -141,7 +141,7 @@ logging), so they need no database.
 ```
 supabase/migrations/       SQL schema + SECURITY DEFINER RPC functions
 src/app/                   App Router: pages + /api/* route handlers
-src/components/            Client components (auth form, sign out)
+src/components/            Client components
 src/lib/                   Domain logic: types, validation, memory repo/service,
                            embeddings, JWT, OAuth authorization server, MCP tools
 tests/                     Vitest unit tests
@@ -150,5 +150,5 @@ tests/                     Vitest unit tests
 ## Data ownership
 
 Your memories are yours: **export** (`universal-memory.json`), **import**, and
-**delete all** are first-class features in **Settings**. Deleting your account
-cascades to every memory, version, audit log and token (FK `on delete cascade`).
+**delete all** are first-class features in **Settings**. `memory_delete_all`
+wipes every memory, version, audit log, integration and token for the owner.

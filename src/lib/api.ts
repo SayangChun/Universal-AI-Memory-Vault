@@ -1,5 +1,5 @@
 // Shared helpers for the REST API routes.
-import { getSessionUser } from './auth';
+import { getSessionUser, type SessionUser } from './auth';
 import { rateLimit, rateLimitEnabled, rateLimitRpm } from './rate-limit';
 
 export class ApiError extends Error {
@@ -29,15 +29,13 @@ export function apiError(err: unknown): Response {
   return json({ error: 'server_error', message: 'Unknown error' }, 500);
 }
 
-/** Returns the authenticated session user or throws a 401 ApiError. */
-export async function requireUser() {
-  const user = await getSessionUser();
-  if (!user) throw new ApiError(401, 'Not authenticated', 'unauthorized');
-  return user;
+/** Returns the single owner identity (the platform has no accounts). */
+export async function requireUser(): Promise<SessionUser> {
+  return getSessionUser();
 }
 
-/** Optional session user (routes that work signed-out). */
-export async function maybeUser() {
+/** The single owner identity (routes that used to work signed-out). */
+export async function maybeUser(): Promise<SessionUser> {
   return getSessionUser();
 }
 
