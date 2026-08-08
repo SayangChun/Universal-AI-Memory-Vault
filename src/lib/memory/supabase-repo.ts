@@ -26,7 +26,7 @@ export class SupabaseMemoryRepo implements MemoryRepo {
   private async rpc<T>(fn: string, args: Record<string, Json | undefined>): Promise<T> {
     const { data, error } = await this.client.rpc(fn, args as Record<string, unknown>);
     if (error) {
-      throw new MemoryRepoError(error.message, error.code);
+      throw new MemoryRepoError(describeRpcError(fn, error), error.code);
     }
     return data as T;
   }
@@ -126,6 +126,35 @@ export class SupabaseMemoryRepo implements MemoryRepo {
 
 function normalizeMemory(row: Memory): Memory {
   return { ...row, meta: (row.meta ?? {}) as Record<string, unknown> };
+}
+
+/** Map a Postgrest/supabase-js error into a message that names the real cause. */
+function describeRpcError(fn: string, error: { message?: string; details?: string; hint?: string; code?: string }): string {
+  const msg = error.message ?? 'Unknown error';
+  // Network-level failures (DNS, connection refused, TLS…) surface as
+  // "TypeError: fetch failed"; postgrest-js does not forward the inner cause.
+  if (/fetch failed/i.test(msg)) {
+    return [
+      `${fn}: failed to reach Supabase (${msg}).`,
+      '',
+      `Configured NEXT_PUBLIC_SUPABASE_URL is: ${urlForError()}`,
+      '',
+      'The URL must be a live Supabase project, e.g. https://<project-ref>.supabase.co.',
+      'A placeholder, an unassigned domain, or a paused project all cause this error.',
+      'Update .env.local with real values and restart the dev server.',
+    ].join('\n');
+  }
+  return `${fn}: ${msg}${error.details ? ` (${error.details})` : ''}`;
+}
+
+/** The Supabase URL currently configured, or a hint when it is missing. */
+function urlForError(): string {
+  const url = (process.env.NEXT_PUBLIC_SUPABASE_URL ?? '').trim();
+  if (!url) return '<unset>';
+  if (/placeholder/i.test(url)) {
+    return `${url}  ← placeholder, replace this with your real project URL`;
+  }
+  return url;
 }
 
 export class MemoryRepoError extends Error {

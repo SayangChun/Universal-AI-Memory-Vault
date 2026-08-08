@@ -1,15 +1,15 @@
-import { getAdminClient } from '@/lib/supabase/admin';
+import { tryGetAdminClient } from '@/lib/supabase/admin';
 import { json, apiError, requireUser, ApiError } from '@/lib/api';
 
 export const dynamic = 'force-dynamic';
-
-const client = getAdminClient();
 
 type Ctx = { params: Promise<{ id: string }> };
 
 export async function DELETE(_request: Request, ctx: Ctx): Promise<Response> {
   try {
     const user = await requireUser();
+    const client = tryGetAdminClient();
+    if (!client) throw new ApiError(503, 'Supabase is not configured.', 'supabase_required');
     const { id } = await ctx.params;
     const { data, error } = await client
       .from('mcp_access_tokens')

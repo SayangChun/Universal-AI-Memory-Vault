@@ -1,8 +1,7 @@
 import Link from 'next/link';
 import { getSessionUser } from '@/lib/auth';
-import { getAdminClient } from '@/lib/supabase/admin';
 import { MemoryService } from '@/lib/memory/service';
-import { SupabaseMemoryRepo } from '@/lib/memory/supabase-repo';
+import { getMemoryRepo, isSupabaseConfigured } from '@/lib/memory/repo-factory';
 import { MEMORY_TYPE_LABELS, MEMORY_TYPE_EN, PROVIDER_LABELS } from '@/lib/types';
 import { formatDate, truncate } from '@/lib/utils';
 
@@ -11,8 +10,10 @@ export const dynamic = 'force-dynamic';
 export default async function DashboardPage() {
   const user = await getSessionUser();
 
-  const service = new MemoryService(new SupabaseMemoryRepo(getAdminClient()));
+  const service = new MemoryService(getMemoryRepo());
   const stats = await service.stats(user.id);
+  const isDemo = !isSupabaseConfigured();
+
 
   const total = stats.total ?? 0;
   const byType = (stats.by_type ?? {}) as Record<string, number>;
@@ -22,6 +23,16 @@ export default async function DashboardPage() {
     <div className="mx-auto max-w-5xl">
       <h1 className="text-2xl font-semibold">Dashboard</h1>
       <p className="mt-1 text-sm text-[#9ca3af]">Your personal memory vault at a glance.</p>
+
+      {isDemo && (
+        <div className="mt-4 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-300">
+          <span className="font-semibold">演示模式（内存存储）</span> — 未检测到有效的 Supabase 配置，当前使用临时内存存储。
+          数据在服务器重启后会丢失。请在{' '}
+          <code className="rounded bg-amber-500/20 px-1">.env.local</code>{' '}
+          中填写真实的 <code className="rounded bg-amber-500/20 px-1">NEXT_PUBLIC_SUPABASE_URL</code>{' '}
+          和 <code className="rounded bg-amber-500/20 px-1">SUPABASE_SERVICE_ROLE_KEY</code>，然后重启服务器即可切换到持久存储。
+        </div>
+      )}
 
       <div className="mt-6 grid gap-4 sm:grid-cols-3">
         <div className="rounded-2xl border border-[#1f2937] bg-[#111827] p-5">

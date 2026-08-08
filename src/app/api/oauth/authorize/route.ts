@@ -2,14 +2,22 @@
 // Single-user platform: no sign-in step, renders a consent page and
 // redirects back with a PKCE auth code on approval.
 import { getSessionUser } from '@/lib/auth';
-import { getAdminClient } from '@/lib/supabase/admin';
+import { tryGetAdminClient } from '@/lib/supabase/admin';
 import { AuthorizationServer, OAuthServerError } from '@/lib/oauth/authorization-server';
 import { json, errorResponse, html } from '@/lib/oauth/http';
 import { appUrl } from '@/lib/env';
 
 export const dynamic = 'force-dynamic';
 
-const authServer = new AuthorizationServer(getAdminClient());
+let _authServer: AuthorizationServer | null = null;
+function getAuthServer(): AuthorizationServer {
+  if (!_authServer) {
+    const client = tryGetAdminClient();
+    if (!client) throw new OAuthServerError('server_error', 'Supabase is not configured; OAuth is unavailable in demo mode.');
+    _authServer = new AuthorizationServer(client);
+  }
+  return _authServer;
+}
 
 interface AuthorizeParams {
   client_id: string;
@@ -29,7 +37,7 @@ async function resolveParams(searchParams: URLSearchParams): Promise<AuthorizePa
   const requestUri = searchParams.get('request_uri');
   const stored: Record<string, string> = {};
   if (requestUri) {
-    const par = await authServer.getPar(requestUri);
+    const par = await getAuthServer().getPar(requestUri);
     if (!par) throw new OAuthServerError('invalid_request_uri', 'Unknown or expired request_uri');
     for (const [k, v] of Object.entries(par)) stored[k] = String(v);
   }
@@ -53,7 +61,7 @@ async function validate(p: AuthorizeParams): Promise<{ clientId: string; redirec
   if (p.code_challenge && p.code_challenge_method && p.code_challenge_method !== 'S256') {
     throw new OAuthServerError('invalid_request', 'Only S256 code_challenge_method is supported');
   }
-  const client = await authServer.getClient(p.client_id);
+  const client = await getAuthServer().getClient(p.client_id);
   if (!client) throw new OAuthServerError('unauthorized_client', 'Unknown client_id');
   if (!p.redirect_uri) throw new OAuthServerError('invalid_request', 'Missing redirect_uri');
   if (!client.redirect_uris.includes(p.redirect_uri)) {
@@ -133,7 +141,7 @@ export async function GET(request: Request): Promise<Response> {
 
   try {
     const { clientId } = await validate(params);
-    const client = await authServer.getClient(clientId);
+    const client = await getAuthServer().getClient(clientId);
     return html(consentHtml(params, client?.client_name ?? 'this application', user.email ?? 'owner'));
   } catch (err) {
     if (err instanceof OAuthServerError) {
@@ -178,9 +186,9 @@ export async function POST(request: Request): Promise<Response> {
     if (!params.code_challenge) {
       return redirectError(redirectUri, params.state, 'invalid_request', 'code_challenge is required (PKCE)');
     }
-    const client = await authServer.getClient(clientId);
+    const client = await getAuthServer().getClient(clientId);
     if (!client) throw new OAuthServerError('unauthorized_client', 'Unknown client_id');
-    const code = await authServer.createAuthCode({
+    const code = await getAuthServer().createAuthCode({
       userId: user.id,
       client,
       redirectUri,

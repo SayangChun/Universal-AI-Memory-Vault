@@ -7,15 +7,17 @@
 // access tokens (JWT from our AS) and personal access tokens are accepted.
 import { requireBearerAuth, getOAuthProtectedResourceMetadataUrl, OAuthError } from '@modelcontextprotocol/server';
 import type { AuthInfo, OAuthTokenVerifier } from '@modelcontextprotocol/server';
-import { getAdminClient } from '@/lib/supabase/admin';
+import { tryGetAdminClient } from '@/lib/supabase/admin';
 import { memoryMcpHandler } from '@/lib/mcp/server';
 import { verifyMcpToken, McpAuthError } from '@/lib/mcp/verifier';
 import { mcpServerUrl } from '@/lib/env';
 
-const client = getAdminClient();
-
 const verifier: OAuthTokenVerifier = {
   async verifyAccessToken(token: string): Promise<AuthInfo> {
+    const client = tryGetAdminClient();
+    if (!client) {
+      throw new OAuthError('access_denied', 'Supabase is not configured; MCP authentication is unavailable.');
+    }
     try {
       const principal = await verifyMcpToken(token, client);
       return {
@@ -46,6 +48,7 @@ const gate = requireBearerAuth({
   requiredScopes: ['mcp'],
   resourceMetadataUrl,
 });
+
 
 export async function POST(request: Request): Promise<Response> {
   const auth: AuthInfo | Response = await gate(request);

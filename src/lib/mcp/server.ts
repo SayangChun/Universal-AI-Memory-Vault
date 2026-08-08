@@ -9,8 +9,7 @@
 // remember and never generates AI responses.
 import { createMcpHandler, McpServer } from '@modelcontextprotocol/server';
 import type { AuthInfo } from '@modelcontextprotocol/server';
-import { getAdminClient } from '../supabase/admin';
-import { SupabaseMemoryRepo } from '../memory/supabase-repo';
+import { getMemoryRepo } from '../memory/repo-factory';
 import { MemoryService } from '../memory/service';
 import {
   mcpSearchSchema,
@@ -32,7 +31,7 @@ let service: MemoryService | null = null;
 
 function getService(): MemoryService {
   if (!service) {
-    service = new MemoryService(new SupabaseMemoryRepo(getAdminClient()));
+    service = new MemoryService(getMemoryRepo());
   }
   return service;
 }

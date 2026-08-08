@@ -1,11 +1,10 @@
-import { getAdminClient } from '@/lib/supabase/admin';
 import { MemoryService } from '@/lib/memory/service';
-import { SupabaseMemoryRepo } from '@/lib/memory/supabase-repo';
+import { getMemoryRepo } from '@/lib/memory/repo-factory';
 import { json, apiError, requireUser, applyRateLimit } from '@/lib/api';
 
 export const dynamic = 'force-dynamic';
 
-const service = new MemoryService(new SupabaseMemoryRepo(getAdminClient()));
+const service = new MemoryService(getMemoryRepo());
 
 export async function GET(): Promise<Response> {
   try {

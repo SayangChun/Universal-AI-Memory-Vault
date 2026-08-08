@@ -1,15 +1,15 @@
-import { getAdminClient } from '@/lib/supabase/admin';
+import { tryGetAdminClient } from '@/lib/supabase/admin';
 import { accessTokenCreateSchema } from '@/lib/validation';
-import { json, apiError, requireUser, applyRateLimit } from '@/lib/api';
+import { json, apiError, requireUser, applyRateLimit, ApiError } from '@/lib/api';
 import { sha256, randomToken } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
 
-const client = getAdminClient();
-
 export async function GET(): Promise<Response> {
   try {
     const user = await requireUser();
+    const client = tryGetAdminClient();
+    if (!client) return json({ tokens: [] });
     const { data, error } = await client
       .from('mcp_access_tokens')
       .select('id, name, token_prefix, integration_id, expires_at, created_at, last_used_at, revoked_at')
@@ -26,6 +26,8 @@ export async function POST(request: Request): Promise<Response> {
   try {
     const user = await requireUser();
     applyRateLimit(user.id, 'access_tokens');
+    const client = tryGetAdminClient();
+    if (!client) throw new ApiError(503, 'Supabase is not configured. Access tokens require a real database.', 'supabase_required');
     const body = await request.json().catch(() => null);
     const parsed = accessTokenCreateSchema.safeParse(body ?? {});
     if (!parsed.success) {

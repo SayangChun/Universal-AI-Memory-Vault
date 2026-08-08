@@ -1,11 +1,19 @@
-import { getAdminClient } from '@/lib/supabase/admin';
+import { tryGetAdminClient } from '@/lib/supabase/admin';
 import { AuthorizationServer, OAuthServerError } from '@/lib/oauth/authorization-server';
 import { json, errorResponse } from '@/lib/oauth/http';
 import { sha256 } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
 
-const authServer = new AuthorizationServer(getAdminClient());
+let _authServer: AuthorizationServer | null = null;
+function getAuthServer(): AuthorizationServer {
+  if (!_authServer) {
+    const client = tryGetAdminClient();
+    if (!client) throw new OAuthServerError('server_error', 'Supabase is not configured; OAuth is unavailable in demo mode.');
+    _authServer = new AuthorizationServer(client);
+  }
+  return _authServer;
+}
 
 export async function POST(request: Request): Promise<Response> {
   const form = await request.formData().catch(() => null);
@@ -14,7 +22,7 @@ export async function POST(request: Request): Promise<Response> {
   for (const [k, v] of form.entries()) body[k] = String(v);
 
   try {
-    const client = await authServer.authenticateClient(body, request.headers.get('authorization'));
+    const client = await getAuthServer().authenticateClient(body, request.headers.get('authorization'));
     const grantType = String(body.grant_type ?? '');
 
     if (grantType === 'authorization_code') {
@@ -23,7 +31,7 @@ export async function POST(request: Request): Promise<Response> {
       const verifier = String(body.code_verifier ?? '');
       if (!code) throw new OAuthServerError('invalid_request', 'Missing code');
 
-      const stored = await authServer.consumeAuthCode(code);
+      const stored = await getAuthServer().consumeAuthCode(code);
       if (!stored) throw new OAuthServerError('invalid_grant', 'Invalid authorization code');
       if (stored.client_id !== client.client_id) {
         throw new OAuthServerError('invalid_grant', 'Code was issued to another client');
@@ -38,7 +46,7 @@ export async function POST(request: Request): Promise<Response> {
         }
       }
 
-      const result = await authServer.issueTokens({
+      const result = await getAuthServer().issueTokens({
         userId: stored.user_id,
         client,
         scopes: stored.scopes,
@@ -49,7 +57,7 @@ export async function POST(request: Request): Promise<Response> {
     if (grantType === 'refresh_token') {
       const refreshToken = String(body.refresh_token ?? '');
       if (!refreshToken) throw new OAuthServerError('invalid_request', 'Missing refresh_token');
-      const result = await authServer.rotateRefreshToken(refreshToken, client);
+      const result = await getAuthServer().rotateRefreshToken(refreshToken, client);
       return json(result);
     }
 
@@ -62,3 +70,4 @@ export async function POST(request: Request): Promise<Response> {
 export async function GET(): Promise<Response> {
   return json({ error: 'method_not_allowed', error_description: 'Use POST' }, 405);
 }
+

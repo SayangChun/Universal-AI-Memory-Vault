@@ -1,13 +1,14 @@
-import { getAdminClient } from '@/lib/supabase/admin';
+import { tryGetAdminClient } from '@/lib/supabase/admin';
 import { json, apiError, requireUser } from '@/lib/api';
 
 export const dynamic = 'force-dynamic';
 
-const client = getAdminClient();
-
 export async function GET(request: Request): Promise<Response> {
   try {
     const user = await requireUser();
+    const client = tryGetAdminClient();
+    if (!client) return json({ entries: [] });
+
     const url = new URL(request.url);
     const limit = Math.min(Math.max(Number(url.searchParams.get('limit') ?? 50) || 50, 1), 200);
     const memoryId = url.searchParams.get('memory_id');
@@ -27,3 +28,4 @@ export async function GET(request: Request): Promise<Response> {
     return apiError(err);
   }
 }
+
